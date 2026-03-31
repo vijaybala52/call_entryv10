@@ -459,6 +459,16 @@ def add_new_entry():
         machines = data.get("machines", [])
         machine_ids = []
         if machines:
+            # Check for unique MC No
+            for m in machines:
+                mc_no = m.get("mc_no", "").strip()
+                if mc_no:
+                    cur.execute("SELECT id FROM machines WHERE mc_no = %s", (mc_no,))
+                    if cur.fetchone():
+                        cur.close()
+                        cnx.close()
+                        return jsonify({"error": f"Machine number '{mc_no}' already exists"}), 400
+            
             machine_sql = """
                 INSERT INTO machines (company_id, mc_no, model, status, start_dt, end_dt,
                                       Inv_No, Inv_Dt, Inv_Value)
@@ -576,6 +586,118 @@ def add_contact():
             "contact_id": contact_id,
             "message": "Contact added successfully"
         })
+
+    except Error as exc:
+        return jsonify({"error": f"Database error: {str(exc)}"}), 500
+    except Exception as exc:
+        return jsonify({"error": f"Server error: {str(exc)}"}), 500
+
+
+@call_entry_bp.route("/api/add-machine", methods=["POST"])
+def add_machine():
+    """Add a new machine for an existing company."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        # Convert to int or None, handling string values
+        def to_int_or_none(val):
+            if val is None or val == '':
+                return None
+            try:
+                return int(val)
+            except (ValueError, TypeError):
+                return None
+
+        company_id = to_int_or_none(data.get("company_id"))
+        mc_no = data.get("mc_no", "").strip()
+        model = data.get("model", "").strip()
+        status = to_int_or_none(data.get("status"))
+        start_dt = data.get("start_dt") or None
+        end_dt = data.get("end_dt") or None
+        Inv_No = data.get("Inv_No", "").strip()
+        Inv_Dt = data.get("Inv_Dt") or None
+        Inv_Value = data.get("Inv_Value", "").strip()
+        start_dt = data.get("start_dt") or None
+        end_dt = data.get("end_dt") or None
+        Inv_No = data.get("Inv_No", "").strip()
+        Inv_Dt = data.get("Inv_Dt") or None
+        Inv_Value = data.get("Inv_Value", "").strip()
+
+        if not company_id:
+            return jsonify({"error": "company_id is required"}), 400
+        if not mc_no:
+            return jsonify({"error": "mc_no is required"}), 400
+
+        cnx = get_connection(DB_CONFIG)
+        cur = cnx.cursor()
+
+        # Check if mc_no already exists
+        cur.execute("SELECT id FROM machines WHERE mc_no = %s", (mc_no,))
+        existing = cur.fetchone()
+        if existing:
+            cur.close()
+            cnx.close()
+            return jsonify({"error": "Machine number must be unique"}), 400
+
+        machine_sql = """
+            INSERT INTO machines (company_id, mc_no, model, status, start_dt, end_dt, Inv_No, Inv_Dt, Inv_Value)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        machine_values = (
+            company_id,
+            mc_no or None,
+            model or None,
+            status,
+            start_dt,
+            end_dt,
+            Inv_No or None,
+            Inv_Dt,
+            Inv_Value or None,
+        )
+        cur.execute(machine_sql, machine_values)
+        machine_id = cur.lastrowid
+        cnx.commit()
+
+        cur.close()
+        cnx.close()
+
+        return jsonify({
+            "success": True,
+            "machine_id": machine_id,
+            "message": "Machine added successfully"
+        })
+
+    except Error as exc:
+        return jsonify({"error": f"Database error: {str(exc)}"}), 500
+    except Exception as exc:
+        return jsonify({"error": f"Server error: {str(exc)}"}), 500
+
+
+@call_entry_bp.route("/api/check-mc-no", methods=["POST"])
+def check_mc_no():
+    """Check if MC No already exists."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"exists": False}), 200
+
+        mc_no = data.get("mc_no", "").strip()
+
+        if not mc_no:
+            return jsonify({"exists": False}), 200
+
+        cnx = get_connection(DB_CONFIG)
+        cur = cnx.cursor()
+
+        cur.execute("SELECT id FROM machines WHERE mc_no = %s", (mc_no,))
+        existing = cur.fetchone()
+
+        cur.close()
+        cnx.close()
+
+        return jsonify({"exists": existing is not None})
 
     except Error as exc:
         return jsonify({"error": f"Database error: {str(exc)}"}), 500

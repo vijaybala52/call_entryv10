@@ -159,6 +159,8 @@
     </table>
 </div>
 
+<button class="btn-3d btn-new-machine" onclick="showNewMachineModal()">New Machines</button>
+
 <!-- Table 2 - Contact List -->
 <div class="table-container table-2">
     <table>
@@ -372,7 +374,7 @@
                             <div class="modal-field-row" style="top: 130px;"><label style="width: 120px;">Start Date</label><input type="date" name="machine_start_dt[]" style="left: 140px; width: 200px;" /><label style="left: 370px;">End Date</label><input type="date" name="machine_end_dt[]" style="left: 470px; width: 200px;" /></div>
                             <div class="modal-field-row" style="top: 170px;"><label style="width: 120px;">Inv No</label><input type="text" name="machine_inv_no[]" style="left: 140px; width: 150px;" /></div>
                             <div class="modal-field-row" style="top: 210px;"><label style="width: 120px;">Inv Date</label><input type="date" name="machine_inv_dt[]" style="left: 140px; width: 200px;" /></div>
-                            <div class="modal-field-row" style="top: 250px;"><label style="width: 120px;">Inv Value</label><input type="text" name="machine_inv_value[]" style="left: 140px; width: 200px;" /></div>
+                            <div class="modal-field-row" style="top: 250px;"><label style="width: 120px;">Inv Value (₹)</label><input type="text" name="machine_inv_value[]" style="left: 140px; width: 200px;" oninput="formatInvValue(this)" /></div>
                         </div>
                     </div>
                 </div>
@@ -415,6 +417,58 @@
             <input type="email" id="contactEmail" name="email" placeholder="Email" required />
             <input type="text" id="contactDesignation" name="designation" placeholder="Designation" required />
             <button type="submit" class="btn-modal-submit">Add Contact</button>
+        </form>
+    </div>
+</div>
+
+<!-- New Machine Modal -->
+<div id="newMachineModal" class="modal-overlay">
+    <div class="modal-container">
+        <span class="modal-close" onclick="closeNewMachineModal()">&times;</span>
+        <h3 class="modal-title">Add New Machine</h3>
+        <form id="newMachineForm" class="modal-form">
+            <input type="hidden" id="machineCompanyId" name="company_id" />
+            <div class="modal-row">
+                <label for="machineMcNo">MC No</label>
+                <input type="text" id="machineMcNo" name="mc_no" required />
+            </div>
+            <div class="modal-row">
+                <label for="machineModel">Model</label>
+                <input type="text" id="machineModel" name="model" required />
+            </div>
+            <div class="modal-row">
+                <label for="machineStatus">Status</label>
+                <select id="machineStatus" name="status" required>
+                    <option value="">Select</option>
+                    {% for opt in status_options %}
+                        <option value="{{ opt.id }}">{{ opt.status_option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="modal-row">
+                <label for="machineStartDt">Start Date</label>
+                <input type="date" id="machineStartDt" name="start_dt" />
+            </div>
+            <div class="modal-row">
+                <label for="machineEndDt">End Date</label>
+                <input type="date" id="machineEndDt" name="end_dt" />
+            </div>
+            <div class="modal-row">
+                <label for="machineInvNo">Invoice No</label>
+                <input type="text" id="machineInvNo" name="Inv_No" />
+            </div>
+            <div class="modal-row">
+                <label for="machineInvDt">Invoice Date</label>
+                <input type="date" id="machineInvDt" name="Inv_Dt" />
+            </div>
+            <div class="modal-row">
+                <label for="machineInvValue">Invoice Value</label>
+                <div class="input-with-symbol">
+                    <span class="currency-symbol">₹</span>
+                    <input type="text" id="machineInvValue" name="Inv_Value" />
+                </div>
+            </div>
+            <button type="submit" class="btn-modal-submit">Add Machine</button>
         </form>
     </div>
 </div>

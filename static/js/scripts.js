@@ -357,6 +357,21 @@ function closeNewContactModal() {
     document.getElementById('newContactModal').classList.remove('show');
 }
 
+// New Machine Modal
+// ============================================
+function showNewMachineModal() {
+    // Set company_id in hidden field
+    const companyIdField = document.getElementById('machineCompanyId');
+    if (companyIdField) {
+        companyIdField.value = currentCompanyId || '';
+    }
+    document.getElementById('newMachineModal').classList.add('show');
+}
+
+function closeNewMachineModal() {
+    document.getElementById('newMachineModal').classList.remove('show');
+}
+
 // ============================================
 // Close Modals on Outside Click
 // ============================================
@@ -384,8 +399,16 @@ document.querySelectorAll('.sidebar-item').forEach(item => {
 });
 
 // ============================================
-// Form Submissions
+// Form Validations
 // ============================================
+function formatInvValue(input) {
+    let value = input.value.replace(/,/g, ''); // Remove existing commas
+    if (value && !isNaN(value)) {
+        input.value = Number(value).toLocaleString('en-IN');
+    }
+}
+
+
 // Add New Entry Form
 document.getElementById('addNewEntryForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -427,7 +450,7 @@ document.getElementById('addNewEntryForm')?.addEventListener('submit', async fun
         const endDt = entry.querySelector('[name="machine_end_dt[]"]')?.value || '';
         const invNo = entry.querySelector('[name="machine_inv_no[]"]')?.value || '';
         const invDt = entry.querySelector('[name="machine_inv_dt[]"]')?.value || '';
-        const invValue = entry.querySelector('[name="machine_inv_value[]"]')?.value || '';
+        const invValue = (entry.querySelector('[name="machine_inv_value[]"]')?.value || '').replace(/,/g, '');
         
         if (mcNo || model || status) { // Only add if at least one field is filled
             machines.push({
@@ -558,6 +581,70 @@ document.getElementById('newContactForm')?.addEventListener('submit', async func
         }
     } catch (err) {
         alert('Error adding contact: ' + err.message);
+    }
+});
+
+// New Machine Form Submission
+document.getElementById('newMachineForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const formData = new FormData(form);
+    
+    // Get company_id from hidden field or current context
+    const companyId = formData.get('company_id') || currentCompanyId;
+    
+    if (!companyId) {
+        alert('Please select a company first');
+        return;
+    }
+    
+    const payload = {
+        company_id: companyId ? parseInt(companyId) : null,
+        mc_no: formData.get('mc_no') || '',
+        model: formData.get('model') || '',
+        status: formData.get('status') ? parseInt(formData.get('status')) : null,
+        start_dt: formData.get('start_dt') || null,
+        end_dt: formData.get('end_dt') || null,
+        Inv_No: formData.get('Inv_No') || '',
+        Inv_Dt: formData.get('Inv_Dt') || null,
+        Inv_Value: formData.get('Inv_Value') || '',
+    };
+    
+    try {
+        const response = await fetch('/api/add-machine', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            alert('Error: ' + result.error);
+        } else {
+            alert('Machine added successfully!');
+            // Reset form
+            form.reset();
+            closeNewMachineModal();
+            
+            // Reload machine table if company is loaded
+            if (currentCompanyId) {
+                await loadCompanyDetails(currentCompanyId);
+            }
+        }
+    } catch (err) {
+        alert('Error adding machine: ' + err.message);
+    }
+});
+
+// Format invoice value with commas
+document.getElementById('machineInvValue')?.addEventListener('input', function(e) {
+    let value = e.target.value.replace(/,/g, ''); // Remove existing commas
+    if (!isNaN(value) && value !== '') {
+        e.target.value = Number(value).toLocaleString('en-IN');
     }
 });
 
