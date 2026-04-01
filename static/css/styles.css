@@ -1628,10 +1628,10 @@ body {
 
 .btn-new-contact {
   left: 1755px;
-  top: 520px;
+  top: 560px;
   width: 125px;
   height: 35px;
-  font-size: 19px;
+  font-size: 18px;
   box-shadow:
     0 4px 0 #004a7c,
     0 6px 8px rgba(0, 0, 0, 0.3);
@@ -1641,6 +1641,17 @@ body {
   box-shadow:
     0 2px 0 #004a7c,
     0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.btn-new-machine {
+  left: 1755px;
+  top: 340px;
+  width: 135px;
+  height: 35px;
+  font-size: 18px;
+  box-shadow:
+    0 4px 0 #004a7c,
+    0 6px 8px rgba(0, 0, 0, 0.3);
 }
 
 .btn-done {
@@ -1686,7 +1697,7 @@ body {
 
 .table-2 {
   left: 710px;
-  top: 350px;
+  top: 390px;
   width: 1185px;
   height: 160px;
   overflow-y: auto !important; /* scroll body, keep header frozen */

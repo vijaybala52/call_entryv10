@@ -492,6 +492,38 @@ document.getElementById('addNewEntryForm')?.addEventListener('submit', async fun
         contacts: contacts,
     };
     
+    // Pre-check machine numbers for existing duplicates before calling add-new-entry
+    const mcNos = machines
+        .map(m => (m.mc_no || '').trim())
+        .filter(n => n);
+
+    // Check for duplicate MC No in client entry itself
+    const dupMcNo = mcNos.find((value, index) => mcNos.indexOf(value) !== index);
+    if (dupMcNo) {
+        alert('Duplicate machine number in the form: ' + dupMcNo);
+        return;
+    }
+
+    for (let mcNo of mcNos) {
+        const checkRes = await fetch('/api/check-mc-no', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mc_no: mcNo }),
+        });
+
+        if (!checkRes.ok) {
+            const txt = await checkRes.text();
+            alert('Machine uniqueness check failed: ' + txt);
+            return;
+        }
+
+        const checkResult = await checkRes.json();
+        if (checkResult.exists) {
+            alert('Machine number already exists: ' + mcNo);
+            return;
+        }
+    }
+
     try {
         const response = await fetch('/api/add-new-entry', {
             method: 'POST',
@@ -610,6 +642,29 @@ document.getElementById('newMachineForm')?.addEventListener('submit', async func
         Inv_Dt: formData.get('Inv_Dt') || null,
         Inv_Value: formData.get('Inv_Value') || '',
     };
+
+    // Pre-check for duplicate machine number
+    if (payload.mc_no) {
+        const checkRes = await fetch('/api/check-mc-no', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ mc_no: payload.mc_no }),
+        });
+
+        if (checkRes.ok) {
+            const checkResult = await checkRes.json();
+            if (checkResult.exists) {
+                alert('Machine number already exists. Please enter a different machine number.');
+                return;
+            }
+        } else {
+            const errorText = await checkRes.text();
+            alert('Could not verify machine number uniqueness: ' + errorText);
+            return;
+        }
+    }
     
     try {
         const response = await fetch('/api/add-machine', {

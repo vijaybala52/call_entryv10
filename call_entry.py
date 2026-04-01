@@ -467,7 +467,7 @@ def add_new_entry():
                     if cur.fetchone():
                         cur.close()
                         cnx.close()
-                        return jsonify({"error": f"Machine number '{mc_no}' already exists"}), 400
+                        return jsonify({"error": f"Machine number '{mc_no}' already exists"}), 409
             
             machine_sql = """
                 INSERT INTO machines (company_id, mc_no, model, status, start_dt, end_dt,
@@ -639,7 +639,7 @@ def add_machine():
         if existing:
             cur.close()
             cnx.close()
-            return jsonify({"error": "Machine number must be unique"}), 400
+            return jsonify({"error": "Machine number must be unique"}), 409
 
         machine_sql = """
             INSERT INTO machines (company_id, mc_no, model, status, start_dt, end_dt, Inv_No, Inv_Dt, Inv_Value)
