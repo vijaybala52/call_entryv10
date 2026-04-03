@@ -434,29 +434,56 @@ def _generate_tripsheet_data(cur, pr_values=None, work_front_ids=None, pr_order=
     
     if not workfront_rows:
         return data
-    
-    # Get start location from start_end_location table using first row's rg
-    first_row_rg = workfront_rows[0].get('rg', '').strip() if workfront_rows else ''
-    start_location = {'customer_name': 'Factory', 'cluster_location': 'E-City', 'zarc': None}
-    
-    if first_row_rg:
+
+    def get_location_from_start_end_by_rg(rg_value):
+        """Fetch start/end location mapping by RG from start_end_location table."""
+        if not rg_value:
+            return None
         try:
             cur.execute("""
                 SELECT customer_name, cluster_location, zarc
                 FROM start_end_location
                 WHERE rg = %s
                 LIMIT 1
-            """, (first_row_rg,))
-            start_row = cur.fetchone()
-            if start_row:
-                start_location = {
-                    'customer_name': start_row.get('customer_name') or 'Factory',
-                    'cluster_location': start_row.get('cluster_location') or 'E-City',
-                    'zarc': start_row.get('zarc')
+            """, (str(rg_value).strip(),))
+            location_row = cur.fetchone()
+            if location_row:
+                return {
+                    'customer_name': location_row.get('customer_name') or 'Factory',
+                    'cluster_location': location_row.get('cluster_location') or 'E-City',
+                    'zarc': location_row.get('zarc')
                 }
-                print(f"Found start location for RG '{first_row_rg}': {start_location['customer_name']} - {start_location['cluster_location']}")
         except Exception as e:
-            print(f"Note: Could not find start location for RG '{first_row_rg}' in start_end_location table: {e}")
+            print(f"Note: Could not find location for RG '{rg_value}' in start_end_location table: {e}")
+        return None
+    
+    # Get start location from the first selected work_front row's RG.
+    # pr_order only controls sorting; it is not the RG used in start_end_location.
+    start_location = {'customer_name': 'Factory', 'cluster_location': None, 'zarc': None}
+    first_row_rg = workfront_rows[0].get('rg', '').strip() if workfront_rows else ''
+    if first_row_rg:
+        start_row = get_location_from_start_end_by_rg(first_row_rg)
+        if start_row:
+            start_location = start_row
+            print(f"Found start location for RG '{first_row_rg}': {start_location['customer_name']} - {start_location['cluster_location']}")
+    
+    # If not found, use the first selected work_front cluster as a neutral fallback.
+    # This keeps Chennai/other region trips local instead of forcing E-City.
+    if not start_location['cluster_location']:
+        first_row_cluster = workfront_rows[0].get('cluster', '').strip() if workfront_rows else ''
+        first_row_zarc = workfront_rows[0].get('zarc')
+        if first_row_cluster:
+            start_location = {
+                'customer_name': 'Factory',
+                'cluster_location': first_row_cluster,
+                'zarc': first_row_zarc
+            }
+            print(f"Set start location from first selected work_front cluster: {start_location['cluster_location']}")
+    
+    # Final fallback only when no mapping and no selected cluster are available.
+    if not start_location['cluster_location']:
+        start_location['cluster_location'] = 'Factory'
+        print("Using default start location: Factory")
     
     # If zarc not found in start_end_location, try to get it from distance table
     if not start_location['zarc']:
@@ -476,46 +503,9 @@ def _generate_tripsheet_data(cur, pr_values=None, work_front_ids=None, pr_order=
         except Exception as e:
             print(f"Note: Could not find ZARC for start location from distance table: {e}")
     
-    # Get end location from start_end_location table using last row's rg
-    last_row_rg = workfront_rows[-1].get('rg', '').strip() if workfront_rows else ''
-    end_location = {'customer_name': 'Factory', 'cluster_location': 'E-City', 'zarc': None}
-    
-    if last_row_rg:
-        try:
-            cur.execute("""
-                SELECT customer_name, cluster_location, zarc
-                FROM start_end_location
-                WHERE rg = %s
-                LIMIT 1
-            """, (last_row_rg,))
-            end_row = cur.fetchone()
-            if end_row:
-                end_location = {
-                    'customer_name': end_row.get('customer_name') or 'Factory',
-                    'cluster_location': end_row.get('cluster_location') or 'E-City',
-                    'zarc': end_row.get('zarc')
-                }
-                print(f"Found end location for RG '{last_row_rg}': {end_location['customer_name']} - {end_location['cluster_location']}")
-        except Exception as e:
-            print(f"Note: Could not find end location for RG '{last_row_rg}' in start_end_location table: {e}")
-    
-    # If zarc not found in start_end_location, try to get it from distance table
-    if not end_location['zarc']:
-        try:
-            cur.execute("""
-                SELECT from_location_zarc, to_location_zarc, from_location, to_location
-                FROM distance
-                WHERE from_location = %s OR to_location = %s
-                LIMIT 1
-            """, (end_location['cluster_location'], end_location['cluster_location']))
-            dist_row = cur.fetchone()
-            if dist_row:
-                if dist_row.get('from_location') == end_location['cluster_location']:
-                    end_location['zarc'] = dist_row.get('from_location_zarc')
-                elif dist_row.get('to_location') == end_location['cluster_location']:
-                    end_location['zarc'] = dist_row.get('to_location_zarc')
-        except Exception as e:
-            print(f"Note: Could not find ZARC for end location from distance table: {e}")
+    # Trip should end at the same location where it started.
+    end_location = start_location.copy()
+    print(f"Set end location same as start location: {end_location['customer_name']} - {end_location['cluster_location']}")
     
     # Load job_time table for est_time_job lookup
     job_time_purpose_map = {}
@@ -672,18 +662,8 @@ def _generate_tripsheet_data(cur, pr_values=None, work_front_ids=None, pr_order=
             prev_location_name = current_location_name
         prev_workfront_id = work_front_id
     
-    # Add return travel row
-    last_row = workfront_rows[-1] if workfront_rows else None
-    last_zarc = last_row.get('zarc', '') if last_row else ''
-    should_add_return = False
-    if last_zarc and len(str(last_zarc)) > 0:
-        zarc_str = str(last_zarc).strip()
-        if zarc_str and zarc_str[0] == '8':
-            should_add_return = True
-    else:
-        should_add_return = True
-    
-    if should_add_return and prev_location_zarc:
+    # Add return travel row for all locations so the trip closes back at the start.
+    if prev_location_zarc:
         last_location_zarc = prev_location_zarc
         end_location_zarc = end_location.get('zarc')
         
@@ -719,6 +699,27 @@ def _generate_tripsheet_data(cur, pr_values=None, work_front_ids=None, pr_order=
                     'actual_odo_read': '',
                     'work_front_id': prev_workfront_id
                 })
+                if return_schd_et:
+                    current_schd_et = return_schd_et
+
+            data.append({
+                'id': None,
+                'sn': '',
+                'Customer_Name': end_location.get('customer_name') or 'Factory',
+                'mc_no': '',
+                'purpose': '',
+                'task_class': '',
+                'cluster_no': '',
+                'cluster_location': end_location.get('cluster_location') or '',
+                'est_dist_kms': '',
+                'est_trvl_time': '',
+                'food_fuel_others': '',
+                'est_job_time': '',
+                'schd_et': time_to_decimal_hours(current_schd_et) if current_schd_et else '',
+                'actual_time': '',
+                'actual_odo_read': '',
+                'work_front_id': prev_workfront_id
+            })
     
     # Add total row
     if data:
@@ -816,5 +817,3 @@ def generate_tripsheet():
                 cnx.close()
         except Exception:
             pass
-
-

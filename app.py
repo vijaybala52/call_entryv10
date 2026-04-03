@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from config import DB_CONFIG
 from database import get_connection
 from call_entry import call_entry_bp
+from customer_list import customer_list_bp
 from workfront import workfront_bp
 from tripsheet import tripsheet_bp
 from workdone import workdone_bp
@@ -19,6 +20,7 @@ app.config.update(DB_CONFIG)
 
 # Register blueprints
 app.register_blueprint(call_entry_bp)
+app.register_blueprint(customer_list_bp)
 app.register_blueprint(workfront_bp)
 app.register_blueprint(tripsheet_bp)
 app.register_blueprint(workdone_bp)

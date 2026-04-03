@@ -239,10 +239,13 @@ function calculateTotalSchdTime(regularRows) {
         // Try to read from DOM first (user may have edited Factory row or recalculated)
         if (rows[index]) {
             const schdEtInput = rows[index].querySelector('.schd-et-input');
+            const schdEtDisplay = rows[index].querySelector('.schd-et-display');
             const schdEtCell = rows[index].querySelector('.schd-et-cell');
             
             if (schdEtInput && schdEtInput.value) {
                 schdEtValue = schdEtInput.value.trim();
+            } else if (schdEtDisplay && schdEtDisplay.textContent) {
+                schdEtValue = schdEtDisplay.textContent.trim();
             } else if (schdEtCell && schdEtCell.textContent) {
                 schdEtValue = schdEtCell.textContent.trim();
             }
@@ -415,10 +418,10 @@ function renderTable() {
             }
         }
         
-        // Create schd_et cell - input for Factory row, display for others
+        // Create schd_et cell - editable input for first row, display for others
         let schdEtCell;
-        if (isFactoryRow) {
-            // Factory row: editable input field
+        if (index === 0) {
+            // First row: editable input field
             schdEtCell = `<div class="td" style="width: 190px;">
                 <input type="text" class="schd-et-input" 
                        value="${schdEtDisplay}" 
@@ -428,7 +431,7 @@ function renderTable() {
             </div>`;
         } else {
             // Other rows: display calculated value
-            schdEtCell = `<div class="td schd-et-cell" style="width: 190px;" data-row-index="${index}">${schdEtDisplay}</div>`;
+            schdEtCell = `<div class="td schd-et-display" style="width: 190px;" data-row-index="${index}">${schdEtDisplay}</div>`;
         }
         
         // Food/fuel cell: placed by recalculateSchdEt based on user-entered schd time
@@ -482,22 +485,22 @@ function renderTable() {
         
         mainTableBody.appendChild(tr);
         
-        // Add event listener for Factory row input
-        if (isFactoryRow) {
+        // Add event listener for schd-et input (only for first row)
+        if (index === 0) {
             const input = tr.querySelector('.schd-et-input');
             if (input) {
                 input.addEventListener('change', function() {
                     recalculateSchdEt(this.value, index);
                     saveUserDataToStorage(); // Save to localStorage
-    });
-    
+                });
+        
                 // Format time input (HH:MM)
                 input.addEventListener('input', function(e) {
                     formatTimeInput(e.target);
                     saveUserDataToStorage(); // Save to localStorage
                 });
                 
-                // Place Food & Fuel on initial load if Factory time already set
+                // Place Food & Fuel on initial load if time already set
                 if (schdEtDisplay && schdEtDisplay.includes(':')) {
                     setTimeout(() => recalculateSchdEt(schdEtDisplay, index), 0);
                 }
@@ -824,11 +827,11 @@ function recalculateSchdEt(factoryTimeStr, factoryRowIndex) {
         // Update DOM: purpose, food_fuel, schd_et
         const purposeCell = row.querySelector('.purpose-cell');
         const foodFuelCell = row.querySelector('.food-fuel-cell');
-        const schdEtCell = row.querySelector('.schd-et-cell');
+        const schdEtElement = row.querySelector('.schd-et-input') || row.querySelector('.schd-et-display') || row.querySelector('.schd-et-cell');
         
         if (purposeCell) purposeCell.textContent = rowPurpose;
         if (foodFuelCell) foodFuelCell.textContent = rowFoodFuel;
-        if (schdEtCell) schdEtCell.textContent = currentTime;
+        if (schdEtElement) schdEtElement.textContent = currentTime;
         
         // Update row data
         if (regularRows[rowIndex]) {
@@ -1253,8 +1256,8 @@ function clearTable() {
         cell.textContent = '';
     });
     
-    const schdEtCells = document.querySelectorAll('.schd-et-cell');
-    schdEtCells.forEach(cell => {
+    const schdEtDisplays = document.querySelectorAll('.schd-et-display');
+    schdEtDisplays.forEach(cell => {
         cell.textContent = '';
     });
     
@@ -1359,10 +1362,11 @@ async function exportToExcel() {
                 
                 const estJobTime = cells[9] ? cells[9].textContent.trim() : (rowData.est_job_time || '');
                 
-                // Schd ET - check input first, then cell
+                // Schd ET - check input first, then display div, then cell
                 const schdEtInput = row.querySelector('.schd-et-input');
+                const schdEtDisplay = row.querySelector('.schd-et-display');
                 const schdEtCell = row.querySelector('.schd-et-cell');
-                const schdEt = schdEtInput ? schdEtInput.value.trim() : (schdEtCell ? schdEtCell.textContent.trim() : (cells[10] ? cells[10].textContent.trim() : ''));
+                const schdEt = schdEtInput ? schdEtInput.value.trim() : (schdEtDisplay ? schdEtDisplay.textContent.trim() : (schdEtCell ? schdEtCell.textContent.trim() : (cells[10] ? cells[10].textContent.trim() : '')));
                 
                 // Actual Time - check input
                 const actualTimeInput = row.querySelector('.actual-time-input');

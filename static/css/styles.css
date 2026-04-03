@@ -744,7 +744,7 @@ body {
   left: 0;
   top: 100px;
   width: 112px;
-  height: 490px;
+  height: 525px;
   object-fit: cover;
   z-index: 5;
 }
@@ -795,8 +795,8 @@ body {
   position: absolute;
   left: 21px;
   top: 0;
-  width: 70px;
-  height: 68px;
+  width: 65px;
+  height: 62px;
   object-fit: cover;
   pointer-events: none;
   z-index: 10;
@@ -833,6 +833,14 @@ body {
 .work-done-overlay-icon {
   width: 32px !important;
   height: 33px !important;
+  object-fit: contain !important;
+}
+
+.customer-list-icon {
+  left: 27px !important;
+  top: 6px !important;
+  width: 56px !important;
+  height: 54px !important;
   object-fit: contain !important;
 }
 

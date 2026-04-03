@@ -127,6 +127,15 @@
                 <div class="sidebar-label">Work Done</div>
             </a>
 
+            <a href="{{ url_for('customer_list.customer_list') }}" class="sidebar-item sidebar-link {% block nav_customer_list_active %}{% endblock %}" style="top: 500px;">
+                <div class="sidebar-btn"></div>
+                <img src="{{ url_for('static', filename='images/icon-people.png') }}" alt="" class="sidebar-icon customer-list-icon" />
+                <div class="sidebar-overlay">
+                    <img src="{{ url_for('static', filename='images/icon-people.png') }}" alt="" class="customer-list-icon" />
+                </div>
+                <div class="sidebar-label">Customer List</div>
+            </a>
+
             <!-- Main Content Block -->
             {% block content %}{% endblock %}
         </div>
