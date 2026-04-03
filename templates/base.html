@@ -121,17 +121,14 @@
             <a href="{{ url_for('workdone.workdone') }}" class="sidebar-item sidebar-link work-done-item {% block nav_workdone_active %}{% endblock %}" style="top: 420px;">
                 <div class="sidebar-btn"></div>
                 <img src="{{ url_for('static', filename='images/icon-flag.png') }}" alt="" class="sidebar-icon work-done-icon" />
-                <div class="sidebar-overlay">
-                    <img src="{{ url_for('static', filename='images/icon-flag.png') }}" alt="" class="work-done-icon" />
-                </div>
                 <div class="sidebar-label">Work Done</div>
             </a>
 
             <a href="{{ url_for('customer_list.customer_list') }}" class="sidebar-item sidebar-link {% block nav_customer_list_active %}{% endblock %}" style="top: 500px;">
                 <div class="sidebar-btn"></div>
-                <img src="{{ url_for('static', filename='images/icon-people.png') }}" alt="" class="sidebar-icon customer-list-icon" />
+                <img src="{{ url_for('static', filename='images/total_user.svg') }}" alt="" class="sidebar-icon customer-list-icon" />
                 <div class="sidebar-overlay">
-                    <img src="{{ url_for('static', filename='images/icon-people.png') }}" alt="" class="customer-list-icon" />
+                    <img src="{{ url_for('static', filename='images/total_user.svg') }}" alt="" />
                 </div>
                 <div class="sidebar-label">Customer List</div>
             </a>

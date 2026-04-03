@@ -744,7 +744,7 @@ body {
   left: 0;
   top: 100px;
   width: 112px;
-  height: 525px;
+  height: 500px;
   object-fit: cover;
   z-index: 5;
 }
@@ -795,8 +795,8 @@ body {
   position: absolute;
   left: 21px;
   top: 0;
-  width: 65px;
-  height: 62px;
+  width: 70px;
+  height: 68px;
   object-fit: cover;
   pointer-events: none;
   z-index: 10;
@@ -831,29 +831,31 @@ body {
 }
 
 .work-done-overlay-icon {
-  width: 32px !important;
-  height: 33px !important;
+  width: 40px;
+  height: 38px;
   object-fit: contain !important;
 }
 
 .customer-list-icon {
-  left: 27px !important;
-  top: 6px !important;
+  left: 50% !important;
+  top: 7px !important;
   width: 56px !important;
-  height: 54px !important;
+  height: 56px !important;
+  transform: translateX(-50%) !important;
   object-fit: contain !important;
 }
 
 .sidebar-label {
   position: absolute;
-  left: 1px;
-  top: 70px;
-  width: 110px;
+  left: 50%;
+  top: 68px;
+  width: 100px;
+  transform: translateX(-50%);
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: bold;
   color: #006db8;
-  line-height: 14px;
+  line-height: 1.2;
   pointer-events: none;
   z-index: 10;
 }

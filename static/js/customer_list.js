@@ -247,6 +247,103 @@ async function exportCustomerListToExcel() {
     }
 }
 
+async function exportCustomerListCompactToExcel() {
+    if (!customerListRows.length) {
+        updateCustomerListStatus('No rows available to export.', true);
+        return;
+    }
+
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Customer List Print2');
+        const exportColumns = [
+            { header: 'S.No', key: 'sl', width: 10 },
+            { header: 'Customer Name', key: 'customer_name', width: 30 },
+            { header: 'M/C', key: 'mc_no', width: 18 },
+            { header: 'Model', key: 'model', width: 22 },
+            { header: 'Address 1', key: 'address1', width: 24 },
+            { header: 'Address 2', key: 'address2', width: 24 },
+            { header: 'Address 3', key: 'address3', width: 24 },
+            { header: 'City', key: 'city', width: 18 },
+            { header: 'PIN', key: 'pin', width: 12 },
+            { header: 'State', key: 'state', width: 18 },
+            { header: 'Country', key: 'country', width: 18 },
+            { header: 'RG', key: 'rg', width: 12 },
+            { header: 'Cluster', key: 'cluster', width: 18 },
+            { header: 'Zone', key: 'zone', width: 12 },
+            { header: 'Area', key: 'area', width: 12 },
+            { header: 'Route', key: 'route', width: 12 },
+            { header: 'Cluster Code', key: 'cluster_code', width: 16 }
+        ];
+
+        worksheet.columns = exportColumns;
+
+        const headerRow = worksheet.getRow(1);
+        headerRow.eachCell((cell) => {
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF006DB8' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.border = {
+                top: { style: 'thin', color: { argb: 'FFB9B9B9' } },
+                bottom: { style: 'thin', color: { argb: 'FFB9B9B9' } },
+                left: { style: 'thin', color: { argb: 'FFB9B9B9' } },
+                right: { style: 'thin', color: { argb: 'FFB9B9B9' } }
+            };
+        });
+
+        customerListRows.forEach((row) => {
+            const excelRow = worksheet.addRow({
+                sl: row.sl || '',
+                customer_name: row.customer_name || '',
+                mc_no: row.mc_no || '',
+                model: row.model || '',
+                address1: row.address1 || '',
+                address2: row.address2 || '',
+                address3: row.address3 || '',
+                city: row.city || '',
+                pin: row.pin || '',
+                state: row.state || '',
+                country: row.country || '',
+                rg: row.rg || '',
+                cluster: row.cluster || '',
+                zone: row.zone || '',
+                area: row.area || '',
+                route: row.route || '',
+                cluster_code: row.cluster_code || ''
+            });
+
+            excelRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin', color: { argb: 'FFB9B9B9' } },
+                    bottom: { style: 'thin', color: { argb: 'FFB9B9B9' } },
+                    left: { style: 'thin', color: { argb: 'FFB9B9B9' } },
+                    right: { style: 'thin', color: { argb: 'FFB9B9B9' } }
+                };
+                cell.alignment = {
+                    vertical: 'middle',
+                    horizontal: colNumber === 1 ? 'center' : 'left'
+                };
+            });
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob(
+            [buffer],
+            { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+        );
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'Customer_List_Print2.xlsx';
+        link.click();
+        window.URL.revokeObjectURL(url);
+        updateCustomerListStatus(`Exported ${customerListRows.length} row(s) to Print2 Excel.`);
+    } catch (error) {
+        console.error('Error exporting compact customer list:', error);
+        updateCustomerListStatus(`Print2 export failed: ${error.message}`, true);
+    }
+}
+
 function syncCustomerListScroll() {
     const bodyWrapper = document.getElementById('customerListBodyWrapper');
     const headerWrapper = document.querySelector('.customer-list-header-wrapper');
@@ -260,6 +357,7 @@ function syncCustomerListScroll() {
 function setupCustomerListActions() {
     const refreshBtn = document.getElementById('refreshCustomerList');
     const printBtn = document.getElementById('printCustomerList');
+    const printCompactBtn = document.getElementById('printCustomerListCompact');
     const applyFilterBtn = document.getElementById('applyCustomerListFilter');
     const clearFilterBtn = document.getElementById('clearCustomerListFilter');
 
@@ -268,6 +366,9 @@ function setupCustomerListActions() {
     }
     if (printBtn) {
         printBtn.addEventListener('click', exportCustomerListToExcel);
+    }
+    if (printCompactBtn) {
+        printCompactBtn.addEventListener('click', exportCustomerListCompactToExcel);
     }
     if (applyFilterBtn) {
         applyFilterBtn.addEventListener('click', applyCustomerListFilter);
