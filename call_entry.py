@@ -74,18 +74,20 @@ def company_suggest():
     if len(query) < 2:
         return jsonify({"companies": []})
 
+    normalized_query = "".join(query.lower().split())
+
     sql = """
         SELECT id, name, address3
         FROM companies
-        WHERE name LIKE %s
-        ORDER BY CASE WHEN name LIKE %s THEN 0 ELSE 1 END, name
+        WHERE REPLACE(LOWER(name), ' ', '') LIKE %s
+        ORDER BY CASE WHEN REPLACE(LOWER(name), ' ', '') LIKE %s THEN 0 ELSE 1 END, name
         LIMIT 10
     """
     cnx = cur = None
     try:
         cnx = get_connection(DB_CONFIG)
         cur = cnx.cursor() 
-        cur.execute(sql, (f"%{query}%", f"{query}%"))
+        cur.execute(sql, (f"%{normalized_query}%", f"{normalized_query}%"))
         rows = cur.fetchall()
         companies = []
         for row in rows:

@@ -30,6 +30,17 @@ def _format_time(value):
     return str(value)
 
 
+def _unique_customer_key(row):
+    """Build a normalized dedupe key for customer list rows."""
+    return (
+        str(row.get("customer_name") or "").strip().casefold(),
+        str(row.get("zone") or "").strip().casefold(),
+        str(row.get("area") or "").strip().casefold(),
+        str(row.get("route") or "").strip().casefold(),
+        str(row.get("mc_no") or "").strip().casefold(),
+    )
+
+
 @customer_list_bp.route("/customer-list")
 def customer_list():
     return render_template("customer_list.html")
@@ -81,9 +92,9 @@ def get_customer_list():
             FROM companies c
             LEFT JOIN machines m ON m.company_id = c.id
             LEFT JOIN contacts cont ON cont.company_id = c.id
-                                  AND (m.id IS NULL OR cont.machine_id = m.id)
+                                AND (m.id IS NULL OR cont.machine_id = m.id)
             LEFT JOIN status_options st ON st.id = m.status
-            LEFT JOIN security_options sec ON sec.id = c.security
+            LEFT JOIN security_options sec ON sec.id = c.security                                                                                                                                                                        
             LEFT JOIN cluster cl
                    ON c.zone REGEXP '^[0-9]+$'
                   AND c.area REGEXP '^[0-9]+$'
@@ -93,13 +104,23 @@ def get_customer_list():
                   AND cl.a = CAST(c.area AS UNSIGNED)
                   AND cl.r = CAST(c.route AS UNSIGNED)
                   AND cl.c = CAST(c.cluster AS UNSIGNED)
+            
             ORDER BY c.name ASC, m.mc_no ASC, cont.name ASC
         """
         cur.execute(query)
         rows = cur.fetchall() or []
 
+        unique_rows = []
+        seen_keys = set()
+        for row in rows:
+            row_key = _unique_customer_key(row)
+            if row_key in seen_keys:
+                continue
+            seen_keys.add(row_key)
+            unique_rows.append(row)
+
         data = []
-        for idx, row in enumerate(rows, start=1):
+        for idx, row in enumerate(unique_rows, start=1):
             data.append({
                 "id": f"{row.get('company_id') or 'c0'}-{row.get('machine_id') or 'm0'}-{row.get('contact_id') or 'p0'}",
                 "sl": str(idx),
